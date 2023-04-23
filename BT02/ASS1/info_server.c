@@ -6,7 +6,6 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <string.h>
-#include <time.h>
 
 int main() 
 {
@@ -34,10 +33,7 @@ int main()
         return 1;
     }
 
-    struct sockaddr_in clientAddr;
-    int clientAddrLen = sizeof(clientAddr);
-
-    int client = accept(listener, (struct sockaddr *)&clientAddr, &clientAddrLen);
+    int client = accept(listener, NULL, NULL);
     if (client == -1)
     {
         perror("accept() failed");
@@ -47,31 +43,32 @@ int main()
 
     // Truyen nhan du lieu
     char buf[256];
-    char tenmt[14];
-    
+    int ret = recv(client, buf, sizeof(buf), 0);
+    buf[ret] = 0;
 
-    
-    while (1)
+    printf("%d bytes received\n", ret);
+
+    int pos = 0;
+    char computer_name[64];
+    strcpy(computer_name, buf);
+    pos = strlen(computer_name) + 1;
+
+    printf("Computer name: %s\n", computer_name);   
+
+    int num_drives = (ret - pos) / 3;
+
+    for (int i = 0; i < num_drives; i++)
     {
-        int ret = recv(client, buf, sizeof(buf), 0);
-        if (ret <= 0)
-            break;
-        
-        // Xu ly du lieu nhan duoc
-        buf[ret] = 0;
+        char drive_letter = buf[pos];
+        pos++;
+        unsigned short drive_size;
+        memcpy(&drive_size, buf + pos, sizeof(drive_size));
+        pos += sizeof(drive_size);
 
-        // Tach cac thong tin tu xau ky tu
-        memcpy(m, buf, 14);
-        tenmt[14] = 0;
-
-        
-
-      
+        printf("%c - %hd\n", drive_letter, drive_size);
     }
 
-    fclose(f);
-
-    close(client);  
+    close(client);
     close(listener);    
 
     return 0;
